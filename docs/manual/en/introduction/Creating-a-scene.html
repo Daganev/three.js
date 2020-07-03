@@ -1,3 +1,25 @@
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild( renderer.domElement );
+var geometry = new THREE.BoxGeometry();
+var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+var cube = new THREE.Mesh( geometry, material );
+scene.add( cube );
+
+camera.position.z = 5;
+function animate() {
+	requestAnimationFrame( animate );
+	cube.rotation.x += 0.01;
+cube.rotation.y += 0.01;
+	renderer.render( scene, camera );
+}
+animate();
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -10,7 +32,7 @@
 	<body>
 		<h1>[name]</h1>
 
-		<p>The goal of this section is to give a brief introduction to three.js. We will start by setting up a scene, with a spinning cube. A working example is provided at the bottom of the page in case you get stuck and need help.</p>
+		<p>The goal of this section is to give a brief introduction to three.js. We will start by defining our expectations and setting up a scene, with a spinning cube. A working example is provided at the bottom of the page in case you get stuck and need help.</p>
 
 		<h2>Before we start</h2>
 
@@ -27,7 +49,7 @@
 					canvas { display: block; }
 				&lt;/style&gt;
 			&lt;/head&gt;
-			&lt;body&gt;
+						&lt;body&gt;
 				&lt;script src="js/three.js"&gt;&lt;/script&gt;
 				&lt;script&gt;
 					// Our Javascript will go here.
@@ -37,19 +59,56 @@
 		</code>
 
 		<p>That's all. All the code below goes into the empty &lt;script&gt; tag.</p>
-
+		<p>Normally we would put the code in a seperate file, but for the sake of this tutorial we will put it in the html.</p>
 		<h2>Creating the scene</h2>
 
 		<p>To actually be able to display anything with three.js, we need three things: scene, camera and renderer, so that we can render the scene with camera.</p>
-
+        <p> Let's create some failing tests to confirm we have the basics expectations of our scene setup correctly. Again, we would normally put our test cases in seperate files so we don't polute our production code with tests, but for this tutorial we will stick it all together, and not even use a fancy testing framework.</p>
+        <code>
+		var scene = {}
+		var camera = {}
+		var renderer = {}
+		console.assert(scene.constructor.name == "Scene", `we have a proper THREE.Scene`);
+		console.assert(camera.fov == 75, "camera's field of view is a reasonable 75 degrees");
+		console.assert(camera.aspect == window.innerWidth / window.innerHeight, "camera's aspect ration matches the window so the view is not squished");
+		console.assert(camera.near < 0.2, "camera's near clipping field should be really really close.");
+		console.assert(camera.far > 999, "camera's far clipping field should be really really far.");
+		console.assert(renderer.constructor.name == "WebGLRenderer", "we have a proper THREE.WebGLRenderer");
+			
+		</code>
+		<p> Note, that for now we have three generic objects, so we can confirm that all our assertions are working.</p>
+		<p> All these assertions, fail, so let's get them passing with our basic setup.</p>
 		<code>
 		var scene = new THREE.Scene();
 		var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-
+		var renderer = new THREE.WebGLRenderer();
+  
+		console.assert(scene.constructor.name == "Scene", `we have a proper THREE.Scene`);
+		console.assert(camera.fov == 75, "camera's field of view is a reasonable 75 degrees");
+		console.assert(camera.aspect == window.innerWidth / window.innerHeight, "camera's aspect ration matches the window so the view is not squished");
+		console.assert(camera.near < 0.2, "camera's near clipping field should be really really close.");
+		console.assert(camera.far > 999, "camera's far clipping field should be really really far.");
+		console.assert(renderer.constructor.name == "WebGLRenderer", "we have a proper THREE.WebGLRenderer");
+		</code>
+        <p> But we still don't see anything. That's because we haven't set the size of the rederer to our window or added it to the DOM. Let's create those test firsts, and then impelement it.</p>
+		<code>
+		var scene = new THREE.Scene();
+		var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 		var renderer = new THREE.WebGLRenderer();
 		renderer.setSize( window.innerWidth, window.innerHeight );
 		document.body.appendChild( renderer.domElement );
+
+        console.assert(scene.constructor.name == "Scene", `we have a proper THREE.Scene`);
+		console.assert(camera.fov == 75, "camera's field of view is a reasonable 75 degrees");
+		console.assert(camera.aspect == window.innerWidth / window.innerHeight, "camera's aspect ration matches the window so the view is not squished");
+		console.assert(camera.near < 0.2, "camera's near clipping field should be really really close.");
+		console.assert(camera.far > 999, "camera's far clipping field should be really really far.");
+		console.assert(renderer.constructor.name == "WebGLRenderer", "we have a proper THREE.WebGLRenderer");
+		console.assert(renderer.getSize(new THREE.Vector2(0,0)).x == new THREE.Vector2(window.innerWidth, window.innerHeight).x, "The renderer is the width of the window");
+		console.assert(renderer.getSize(new THREE.Vector2(0,0)).y == new THREE.Vector2(window.innerWidth, window.innerHeight).y, "The renderer is the height of the window");
+
 		</code>
+
 
 		<p>Let's take a moment to explain what's going on here. We have now set up the scene, our camera and the renderer.</p>
 
@@ -70,13 +129,21 @@
 		<p>Last but not least, we add the <strong>renderer</strong> element to our HTML document. This is a &lt;canvas&gt; element the renderer uses to display the scene to us.</p>
 
 		<p><em>"That's all good, but where's that cube you promised?"</em> Let's add it now.</p>
+		<p> First we add three new tests to make sure we understand the requirements for our cube </p>
 
+		<code>
+		console.assert(geometry.faces.length === 12, 'Our geometry is a cube' );
+		console.assert(material.color.g === 1, 'Our cube is green' );
+		console.assert(material.color.b === 0, 'Our cube is green' );
+		console.assert(material.color.r === 0, 'Our cube is green' );
+
+		</code>
+		<p> Lots of undefined properties, so let's create our cube and see those tests pass. </p>
 		<code>
 		var geometry = new THREE.BoxGeometry();
 		var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 		var cube = new THREE.Mesh( geometry, material );
 		scene.add( cube );
-
 		camera.position.z = 5;
 		</code>
 
@@ -87,11 +154,12 @@
 		<p>The third thing we need is a <strong>Mesh</strong>. A mesh is an object that takes a geometry, and applies a material to it, which we then can insert to our scene, and move freely around.</p>
 
 		<p>By default, when we call <strong>scene.add()</strong>, the thing we add will be added to the coordinates <strong>(0,0,0)</strong>. This would cause both the camera and the cube to be inside each other. To avoid this, we simply move the camera out a bit.</p>
-
+		<p>The tests pass but we can't see anything! We will explain how to render next.</p>
+		
 		<h2>Rendering the scene</h2>
-
+		
 		<p>If you copied the code from above into the HTML file we created earlier, you wouldn't be able to see anything. This is because we're not actually rendering anything yet. For that, we need what's called a <strong>render or animate loop</strong>.</p>
-
+        <p> We won't write any tests for this one, because it's hard to know what we want from the code here. It's better to look at the animation with our eyes and see that it's working properly, or adjust accordingly. </p>
 		<code>
 		function animate() {
 			requestAnimationFrame( animate );
@@ -99,13 +167,13 @@
 		}
 		animate();
 		</code>
-
+        
 		<p>This will create a loop that causes the renderer to draw the scene every time the screen is refreshed (on a typical screen this means 60 times per second). If you're new to writing games in the browser, you might say <em>"why don't we just create a setInterval ?"</em> The thing is - we could, but <strong>requestAnimationFrame</strong> has a number of advantages. Perhaps the most important one is that it pauses when the user navigates to another browser tab, hence not wasting their precious processing power and battery life.</p>
-
+		<p> Well this, doesn't look right, we will need to tell the cube to rotate. Again, no tests because we would have to assert the rotation value on every frame, and depending on our computer speed, we don't know what the actual rotation value should be, so we'll just use our eyes here.</p>
+		<p>
 		<h2>Animating the cube</h2>
 
 		<p>If you insert all the code above into the file you created before we began, you should see a green box. Let's make it all a little more interesting by rotating it.</p>
-
 		<p>Add the following right above the <strong>renderer.render</strong> call in your <strong>animate</strong> function:</p>
 
 		<code>
@@ -121,8 +189,10 @@
 		<p>The full code is available below and as an editable [link:https://jsfiddle.net/mkba0ecu/ live example]. Play around with it to get a better understanding of how it works.</p>
 
 		<code>
+		&lt;!DOCTYPE html&gt;
 		&lt;html&gt;
 			&lt;head&gt;
+				&lt;meta charset="utf-8"&gt;
 				&lt;title&gt;My first three.js app&lt;/title&gt;
 				&lt;style&gt;
 					body { margin: 0; }
@@ -132,31 +202,41 @@
 			&lt;body&gt;
 				&lt;script src="js/three.js"&gt;&lt;/script&gt;
 				&lt;script&gt;
-					var scene = new THREE.Scene();
-					var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+                var scene = new THREE.Scene();
+		        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+                var renderer = new THREE.WebGLRenderer();
+                renderer.setSize( window.innerWidth, window.innerHeight );
+                document.body.appendChild( renderer.domElement );
+                console.assert(scene.constructor.name == "Scene", `we have a proper THREE.Scene`);
+                console.assert(camera.fov == 75, "camera's field of view is a reasonable 75 degrees");
+                console.assert(camera.aspect == window.innerWidth / window.innerHeight, "camera's aspect ration matches the window so the view is not squished");
+                console.assert(camera.near &lt; 0.2, "camera's near clipping field should be really really close.");
+                console.assert(camera.far &gt; 999, "camera's far clipping field should be really really far.");
+                console.assert(renderer.constructor.name == "WebGLRenderer", "we have a proper THREE.WebGLRenderer");
+                console.assert(renderer.getSize(new THREE.Vector2(0,0)).x == new THREE.Vector2(window.innerWidth, window.innerHeight).x, "The renderer is the width of the window");
+                console.assert(renderer.getSize(new THREE.Vector2(0,0)).y == new THREE.Vector2(window.innerWidth, window.innerHeight).y, "The renderer is the height of the window");
 
-					var renderer = new THREE.WebGLRenderer();
-					renderer.setSize( window.innerWidth, window.innerHeight );
-					document.body.appendChild( renderer.domElement );
 
-					var geometry = new THREE.BoxGeometry();
-					var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-					var cube = new THREE.Mesh( geometry, material );
-					scene.add( cube );
+                var geometry = new THREE.BoxGeometry();
+                var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+                var cube = new THREE.Mesh( geometry, material );
+                        scene.add( cube );
 
-					camera.position.z = 5;
+                console.assert(geometry.faces.length === 12, 'Our geometry is a cube' );
+                console.assert(material.color.g === 1, 'Our cube is green' );
+                console.assert(material.color.b === 0, 'Our cube is green' );
+                console.assert(material.color.r === 0, 'Our cube is green' );
 
-					var animate = function () {
-						requestAnimationFrame( animate );
-
-						cube.rotation.x += 0.01;
-						cube.rotation.y += 0.01;
-
-						renderer.render( scene, camera );
-					};
-
-					animate();
-				&lt;/script&gt;
+				
+				camera.position.z = 5;
+				function animate() {
+                    requestAnimationFrame( animate );
+                    cube.rotation.x += 0.01;
+                    cube.rotation.y += 0.01;
+                    renderer.render( scene, camera );
+                }
+                animate();
+                &lt;/script&gt; &lt;!--  Our Javascript will go in this file. --&gt;
 			&lt;/body&gt;
 		&lt;/html&gt;
 		</code>
